@@ -56,7 +56,7 @@ export class BlogService{
 
         if(!blogPost)
         {
-            throw new BadRequestException('Blogpost not found!');
+            throw new NotFoundException('Blogpost not found!');
         }
 
         return blogPost;

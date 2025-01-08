@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../entities/user.entity';
@@ -21,7 +21,7 @@ export class UsersService {
       where: { email: createUserDto.email } 
     });
     if (existingUser) {
-      throw new BadRequestException('Email already exists');
+      throw new ConflictException('Email already exists');
     }
 
     const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
@@ -45,7 +45,7 @@ export class UsersService {
   async findOne(id: number) {
     const user = await this.usersRepository.findOneBy({ id });
     if (!user) {
-      throw new BadRequestException('User not found');
+      throw new NotFoundException('User not found');
     }
     delete user.password;
     return user;
@@ -68,7 +68,7 @@ export class UsersService {
   async createPasswordResetToken(email: string): Promise<string> {
     const user = await this.usersRepository.findOne({ where: { email } });
     if (!user) {
-      throw new BadRequestException('User not exitsing!');
+      throw new NotFoundException('User not exitsing!');
     }
   
     const resetToken = crypto.randomBytes(32).toString('hex');
