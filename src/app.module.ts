@@ -3,10 +3,12 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from './modules/users/users.module';
+import { BlogModule } from './modules/blog/blog.module';
 import { AuthModule } from './modules/auth/auth.module';
-import { User } from './modules/users/entities/user.entity';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MailModule } from './modules/mail/mail.module';
+import { BlogPost } from './modules/blog/entities/post.entity';
+import { User } from './modules/users/entities/user.entity';
 
 @Module({
   imports: [
@@ -22,12 +24,13 @@ import { MailModule } from './modules/mail/mail.module';
         username: configService.get('DB_USERNAME', 'root'),
         password: configService.get('DB_PASSWORD', 'Asdasd007@'),
         database: configService.get('DB_DATABASE', 'nestjs_db'),
-        entities: [User],
+        entities: [User, BlogPost],
         synchronize: configService.get('DB_SYNCHRONIZE', true),
       }),
       inject: [ConfigService],
     }),
     UsersModule,
+    BlogModule,
     MailModule,
     AuthModule
   ],

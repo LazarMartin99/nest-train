@@ -7,6 +7,6 @@ export const AppDataSource = new DataSource({
     username: "root",
     password: "Asdasd007@",
     database: "nestjs_db",
-    entities: ["src/entities/*.ts"],
+    entities: ["src/modules/**/entities/*.ts"],
     migrations: ["src/migrations/*.ts"]
 })
