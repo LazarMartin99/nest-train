@@ -16,4 +16,10 @@ export class User {
 
     @Column({ name: 'created_at', default: () => 'CURRENT_TIMESTAMP' })
     createdAt: Date;
+
+    @Column({ nullable: true })
+    passwordResetToken: string;
+
+    @Column({ nullable: true })
+    passwordResetExpires: Date;
 }

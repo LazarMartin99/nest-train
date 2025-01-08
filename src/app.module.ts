@@ -5,20 +5,30 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { User } from './modules/users/entities/user.entity';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { MailModule } from './modules/mail/mail.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forRoot({
-      type: 'mysql',
-      host: 'localhost',
-      port: 3306,
-      username: 'root',
-      password: 'Asdasd007@',
-      database: 'nestjs_db',
-      entities: [User],
-      synchronize: true,
+    ConfigModule.forRoot({
+      isGlobal: true,  // Hogy minden modulban elérhető legyen
+    }),
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => ({
+        type: 'mysql',
+        host: configService.get('DB_HOST', 'localhost'),
+        port: configService.get('DB_PORT', 3306),
+        username: configService.get('DB_USERNAME', 'root'),
+        password: configService.get('DB_PASSWORD', 'Asdasd007@'),
+        database: configService.get('DB_DATABASE', 'nestjs_db'),
+        entities: [User],
+        synchronize: configService.get('DB_SYNCHRONIZE', true),
+      }),
+      inject: [ConfigService],
     }),
     UsersModule,
+    MailModule,
     AuthModule
   ],
   controllers: [AppController],

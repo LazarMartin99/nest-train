@@ -5,6 +5,8 @@ import { User } from '../entities/user.entity';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { UpdateUserDto } from '../dto/update-user.dto';
 import * as bcrypt from 'bcrypt'; 
+import { MoreThanOrEqual } from 'typeorm';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class UsersService {
@@ -62,4 +64,48 @@ export class UsersService {
     const user = await this.findOne(id);
     return this.usersRepository.remove(user);
   }
+
+  async createPasswordResetToken(email: string): Promise<string> {
+    const user = await this.usersRepository.findOne({ where: { email } });
+    if (!user) {
+      throw new BadRequestException('User not exitsing!');
+    }
+  
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const hashedToken = crypto
+      .createHash('sha256')
+      .update(resetToken)
+      .digest('hex');
+  
+    user.passwordResetToken = hashedToken;
+    user.passwordResetExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    await this.usersRepository.save(user);
+  
+    return resetToken;
+  }
+  
+  async resetPassword(token: string, newPassword: string): Promise<void> {
+    const hashedToken = crypto
+      .createHash('sha256')
+      .update(token)
+      .digest('hex');
+  
+    const user = await this.usersRepository.findOne({
+      where: {
+        passwordResetToken: hashedToken,
+        passwordResetExpires: MoreThanOrEqual(new Date()),
+      },
+    });
+  
+    if (!user) {
+      throw new BadRequestException('Invalid or expired reset token');
+    }
+  
+    user.password = await bcrypt.hash(newPassword, 10);
+    user.passwordResetToken = null;
+    user.passwordResetExpires = null;
+  
+    await this.usersRepository.save(user);
+  }
+  
 }
