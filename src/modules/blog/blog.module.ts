@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { CategoryService } from './services/category.service';
 import { CategoryController } from './controllers/category.controller';
 import { BlogController } from './controllers/blog.controller';
+import { BlogAnalyzerService } from './services/blog.analyzer.service';
 import { BlogService } from './services/blog.service';
 import { BlogPost } from './entities/post.entity';
 import { JwtModule } from '@nestjs/jwt';
@@ -27,7 +28,7 @@ import { Category } from './entities/category.enitity';
       }),
     ],
     controllers: [BlogController, CategoryController],
-    providers: [BlogService, CategoryService, AuthGuard],
+    providers: [BlogService, CategoryService, BlogAnalyzerService, AuthGuard],
     exports: [BlogService, CategoryService],
   })
   export class BlogModule {}

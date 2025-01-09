@@ -5,15 +5,21 @@ import { BlogPost } from '../entities/post.entity';
 import { CreatePostDto } from '../dto/create.post.dto';
 import { UpdatePostDto } from '../dto/update.post.dto';
 import { User } from 'src/modules/users/entities/user.entity';
+import { Category } from '../entities/category.enitity';
+import { BlogAnalyzerService } from './blog.analyzer.service';
 
 @Injectable()
 export class BlogService{
+
     constructor(
         @InjectRepository(BlogPost)
         private blogPostRepository: Repository<BlogPost>,
         @InjectRepository(User)
         private userRepository: Repository<User>,
-      ) {}
+        @InjectRepository(Category)
+        private categoryRepository: Repository<Category>,
+        private blogAnalyzerService: BlogAnalyzerService
+    ) {}
 
     async create(createPostDto: CreatePostDto, userId: number)
     {
@@ -34,7 +40,19 @@ export class BlogService{
             ...createPostDto,
             author: user
         });
-        return this.blogPostRepository.save(blogPost);
+
+        // Mentjük, hogy legyen ID-ja az analízishez
+        const savedPost = await this.blogPostRepository.save(blogPost);
+
+        // Elemezzük a tartalmat
+        const analysis = await this.blogAnalyzerService.analyzeContent(savedPost);
+
+        // Kategóriák hozzáadása
+        const categories = await this.processSuggestedCategories(analysis.suggestedCategories);
+        savedPost.categories = categories;
+
+        // Frissítjük a posztot a kategóriákkal
+        return this.blogPostRepository.save(savedPost);
     }
 
     async findByTitle(title: string)
@@ -45,9 +63,27 @@ export class BlogService{
     async findAll()
     {
         return this.blogPostRepository.find({
-            relations: ['author'],
+            relations: ['author', 'categories'],
             select: ['id', 'title', 'content', 'published', 'createdAt']
         });
+    }
+
+    private async processSuggestedCategories(suggestions: Array<{name: string, confidence: number}>) {
+        const categories: Category[] = [];
+        
+        for (const suggestion of suggestions) {
+            if (suggestion.confidence >= 30) { // Csak a 30% feletti magabiztosságú javaslatokat fogadjuk el
+                let category = await this.categoryRepository.findOne({
+                    where: { name: suggestion.name }
+                });
+
+                if (category) {
+                    categories.push(category);
+                }
+            }
+        }
+
+        return categories;
     }
 
     async findOne(id: number)
